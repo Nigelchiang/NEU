@@ -6,6 +6,7 @@
  * Date: 2016/1/1
  * Time: 20:46
  */
+namespace Nigel\NEU;
 class Captcha {
 
     /**

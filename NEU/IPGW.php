@@ -6,7 +6,11 @@
  * Date: 2015/12/31
  * Time: 12:55
  */
-namespace Nigel\IPGW;
+namespace Nigel\NEU;
+
+use Nigel\Utils\simple_html_dom as DOM;
+
+include 'autoload.php';
 
 class IPGW {
 
@@ -91,9 +95,10 @@ class IPGW {
                     'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36');
         $response = curl_exec($ch);
         //user.Account?operation与user_banner.html的唯一区别
-        if (false !== strpos($response, '<!--Add below--><td><table><tr><td nowrap><font color="ffffff" >')
+        if (false !== strpos($response, "<!--Add below-->" . "<td><table><tr><td nowrap><font color=\"ffffff\" >")
+            //todo 这里的口令错误是utf编码，而网页上的是GBK，所以这里的strpos结果不准确
             && false === strpos($response,
-                                '<!--Add below--><td><table><tr><td nowrap><font color="ffffff" >口令错误.</font>')
+                                "<!--Add below-->" . "<td><table><tr><td nowrap><font color=\"ffffff\" >口令错误.</font>")
         ) {
             return true;
         }
@@ -105,6 +110,7 @@ class IPGW {
      * @return array|bool 获取信息
      */
     private function getInfo() {
+
 
         $url = 'http://tree.neu.edu.cn/user/user.AccountManagement?operation=info&base_dn=self';
 
@@ -122,9 +128,8 @@ class IPGW {
         if ($infoPage === false || false === strpos($infoPage, 'active')) {
             return false;
         }
-        require_once "sdk/simple_html_dom.php";
         $html = preg_replace('/&nbsp;/', '', $infoPage);
-        $html = new simple_html_dom($html);
+        $html = new DOM($html);
         $info = array();
 
         list($id, $class) = explode(',', $html->find('font[color=#8b4513]', 0)->innertext);
@@ -144,10 +149,14 @@ class IPGW {
 
         if ($this->loginTree()) {
             if ($info = $this->getInfo()) {
-                $query = "insert into info(id,class,balance,name,tel,aval) VALUES ('" . $info["id"] . "','" . $info["class"] . "','" . $info["balance"] . "','" . $info["name"] . "','" . $info["tel"] . "'," . "1)";
+                $query = "insert into info(id,class,balance,name,tel,aval) VALUES('" . $info["id"] . "',
+                                                                                  '" . $info["class"] . "',
+                                                                                  '" . $info["balance"] . "',
+                                                                                  '" . $info["name"] . "',
+                                                                                  '" . $info["tel"] . "',
+                                                                                   " . "1)";
                 mysqli_query($this->dbc, $query) or die("error geting one: " . mysqli_error($this->dbc));
-                //echo $query."\n";
-                //echo mysqli_error($this->dbc);
+
                 return true;
             }
         }
@@ -183,7 +192,7 @@ class IPGW {
      */
     private function exist($id) {
 
-        $query = "select * from info where id='$id'";
+        $query = "select * from info where id = '$id'";
         $res = mysqli_query($this->dbc, $query) or die("Error checking exist: " . mysqli_error($this->dbc));
 
         return mysqli_fetch_array($res) ? true : false;
@@ -224,7 +233,7 @@ class IPGW {
      */
     private function unavailable() {
 
-        $query = "insert into info(id,aval) VALUES ('$this->id',0)";
+        $query = "insert into info(id, aval) VALUES('$this->id', 0)";
         mysqli_query($this->dbc, $query) or die("unavailable: " . mysqli_error($this->dbc));
     }
 
@@ -245,9 +254,9 @@ class IPGW {
             'timeout'   => '1');
         $post    = http_build_query($post);
         $headers = array(
-            "Connection: keep-alive",
-            "Cache-Control: max-age=0",
-            "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+            "Connection: keep - alive",
+            "Cache - Control: max - age = 0",
+            "Accept: text / html,application / xhtml + xml,application / xml;q = 0.9,image / webp,*/*;q=0.8",
             "Origin: http://ipgw.neu.edu.cn",
             "Upgrade-Insecure-Requests: 1",
             "Content-Type: application/x-www-form-urlencoded",
@@ -279,10 +288,12 @@ class IPGW {
      */
     public static function loginMyself() {
 
-        if (static::loginIPGW('20144633', '2025642313', 2)
-            && static::loginIPGW('20144633', '2025642313')
+        $id   = '20144633';
+        $pass = '2025642313';
+        if (static::loginIPGW($id, $pass, 2)
+            && static::loginIPGW($id, $pass)
         ) {
-            echo '20144633 ' . "登陆成功\n";
+            echo "登陆成功: " . "$id\n";
         }
     }
 
@@ -311,7 +322,6 @@ class IPGW {
 
 }
 
-header('content-type:text/html;charset=gbk');
 //$ipgw = new IPGW();
 //$ipgw->collect();
 IPGW::loginMyself();

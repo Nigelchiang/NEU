@@ -14,7 +14,7 @@
  * @link      https://github.com/laravel/framework/blob/4.2/src/Illuminate/Support/Arr.php
  */
 
-namespace Overtrue\Wechat\Utils;
+namespace Nigel\Utils;
 
 use Closure;
 
