@@ -6,13 +6,33 @@
  * Date: 2015/12/31
  * Time: 12:55
  */
+namespace Nigel\IPGW;
+
 class IPGW {
 
+    /**
+     * @var string cookie文件路径
+     */
     protected $cookiefile;
-    public    $id;
-    public    $pass;
-    private   $dbc;
+    /**
+     * @var string id
+     */
+    public $id;
+    /**
+     * @var string pass
+     */
+    public $pass;
+    /**
+     * @var resource 数据库连接句柄
+     */
+    private $dbc;
 
+    /**
+     * IPGW constructor.
+     *
+     * @param string $id
+     * @param string $pass
+     */
     function __construct($id = '20144633', $pass = '2025642313') {
 
         $this->id         = $id;
@@ -30,13 +50,12 @@ class IPGW {
 
     /**
      * 登陆校园网管理中心
-     *
-     * @param $id   string
-     * @param $pass string
-     *
      * @return bool 登陆是否成功
+     * @internal param string $id
+     * @internal param string $pass
+     *
      */
-    function loginTree() {
+    private function loginTree() {
 
         //获取cookie
         $loginUrl = 'http://tree.neu.edu.cn/user/user.Account?operation=login';
@@ -85,7 +104,7 @@ class IPGW {
     /**
      * @return array|bool 获取信息
      */
-    function getInfo() {
+    private function getInfo() {
 
         $url = 'http://tree.neu.edu.cn/user/user.AccountManagement?operation=info&base_dn=self';
 
@@ -121,7 +140,7 @@ class IPGW {
     /**
      * 获取一个可用账号并储存
      */
-    function getOne() {
+    private function getOne() {
 
         if ($this->loginTree()) {
             if ($info = $this->getInfo()) {
@@ -159,6 +178,7 @@ class IPGW {
      * 查看账号是否存在
      *
      * @param $id string
+     *
      * @return bool
      */
     private function exist($id) {
@@ -172,11 +192,11 @@ class IPGW {
     /**
      * 遍历，储存能用的账号
      */
-    function collect() {
+    public function collect() {
 
         $this->clean();
         $count = $this->count();
-        $id    = 20151464;
+        $id    = 20155888;
         while ($count < 100 && $id < 20159000) {
             while ($this->exist($id)) {
                 ++$id;
@@ -215,7 +235,7 @@ class IPGW {
      * @param $pass      string
      * @param $operation int 0=connect 2=disconnect 3=disconnectall
      */
-    function loginIPGW($uid, $pass, $operation = 0) {
+    public static function loginIPGW($uid, $pass, $operation = 0) {
 
         $post    = array(
             'uid'       => $uid,
@@ -247,38 +267,52 @@ class IPGW {
         curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         $response = curl_exec($ch);
         curl_close($ch);
-        //echo $response;
-        if (($operation == 0 && strpos($response, "Connect successfully"))
-            || ($operation == 1 && strpos($response, "Disconnect Succeeded"))
-            || ($operation == 2 && strpos($response, "Disconnect All Succeeded"))
-        ) {
-            return true;
-        }
 
-        return false;
+        return ($operation == 0 && strpos($response, "Connect successfully"))
+               || ($operation == 1 && strpos($response, "Disconnect Succeeded"))
+               || ($operation == 2 && strpos($response, "Disconnect All Succeeded"));
     }
 
-    function login() {
+    /**
+     * 登陆我自己的账号
+     * @return bool
+     */
+    public static function loginMyself() {
+
+        if (static::loginIPGW('20144633', '2025642313', 2)
+            && static::loginIPGW('20144633', '2025642313')
+        ) {
+            echo '20144633 ' . "登陆成功\n";
+        }
+    }
+
+    /**
+     * 自动选取可用账号登陆
+     *
+     * @param bool $force 开启强制登陆
+     */
+    public function login($force = false) {
 
         $query = "select * from info WHERE aval=1 AND balance >0";
         $res = mysqli_query($this->dbc, $query) or die("login: " . mysqli_error($this->dbc));
-        while ($goodman[] = mysqli_fetch_array($res)) {
-
+        while ($goodmen[] = mysqli_fetch_array($res)) {
+            //测试一下fetch_all
         }
         do {
-            $key = array_rand($goodman);
-            $id  = $goodman[$key]['id'];
+            $goodman = $goodmen[array_rand($goodmen)];
+            $id      = $goodman['id'];
+            //断开全部连接
+            $force && static::loginIPGW($id, $id, 2);
             sleep(1);
-        } while (!$this->loginIPGW($id, $id));
+        } while (!static::loginIPGW($id, $id));
 
-        echo "Thanks to: " . $goodman[$key]['name'] . "\n";
+        echo "Thanks to: " . $goodman['name'] . "\n";
     }
 
 }
 
 header('content-type:text/html;charset=gbk');
-$ipgw = new IPGW();
-$ipgw->collect();
-//(new IPGW())->getOne();
-//var_dump($ipgw->loginIPGW('20144633', '2025642313', 0));
-//$ipgw->login();
+//$ipgw = new IPGW();
+//$ipgw->collect();
+IPGW::loginMyself();
+//$ipgw->login(true);
