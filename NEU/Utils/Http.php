@@ -13,7 +13,7 @@
  * @link      https://github.com/overtrue
  * @link      http://overtrue.me
  */
-namespace Overtrue\Wechat\Utils;
+namespace Nigel\Utils;
 
 /**
  * Http请求类.

