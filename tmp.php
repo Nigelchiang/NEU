@@ -83,6 +83,3 @@
 //if(array(array())){
 //    echo 'hello';
 //}
-var_dump('1' + 5);
-$a = '11';
-var_dump(++$a);

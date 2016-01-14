@@ -13,3 +13,5 @@ gen
 captcha/training/
 *.jpeg
 captcha/learn/font/
+*.aspx
+*.html

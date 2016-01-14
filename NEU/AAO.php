@@ -8,6 +8,7 @@
 namespace Nigel\NEU;
 
 use Nigel\Utils\simple_html_dom as DOM;
+
 //同一个命名空间之内，不用use
 //要想使用autoload，最重要的一点就是类的名字和文件名要完全一样，完全一样之后就可以使用as别名了
 include 'autoload.php';
@@ -18,39 +19,31 @@ class AAO {
     /**
      * @var resource 数据库连接句柄
      */
-    private $dbc;
+    protected $dbc;
     /**
      * @var resource|bool 验证码图像资源
      */
-    private $img;
+    protected $img;
     /**
      * @var string cookie文件的地址
      */
-    private $cookiefile;
+    protected $cookiefile;
     /**
      * @var array|bool 账号个人信息
      */
-    private $info;
+    protected $info;
 
-    function __construct() {
+    public function __construct() {
 
         $this->cookiefile = __DIR__ . "\\cookie.txt";
-        $this->dbc = mysqli_connect('localhost:3306', 'nigel', 'nigel',
-                                    'neu') or die("Error connecting: " . mysqli_error($this->dbc));
-        //mysqli_query("set character set 'gbk'");//读库
-        //mysql_query("set names 'gbk'");//写库
-        mysqli_set_charset($this->dbc, 'gbk');
+
     }
 
-    function __destruct() {
-
-        mysqli_close($this->dbc) or die("Error close: " . mysqli_error($this->dbc));
-    }
 
     /**
      * @return mixed 返回获取的验证码二进制流
      */
-    private function getCaptchaAndCookie() {
+    protected function getCaptchaAndCookie() {
 
         /**
          * mode=3 请求登陆页面,没必要请求这个页面，直接请求验证码，然后向mode=4 post数据就行
@@ -67,7 +60,8 @@ class AAO {
 
         //获取验证码并保存cookie
         $ch       = curl_init();
-        $header[] = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0 FirePHP/0.7.4';
+        $header[] =
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64; rv:43.0) Gecko/20100101 Firefox/43.0 FirePHP/0.7.4';
         $header[] = 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8';
         $header[] = 'Accept-Language: zh-CN,zh;q=0.8,en-US;q=0.5,en;q=0.3';
         $header[] = 'Accept-Encoding: gzip, deflate';
@@ -84,7 +78,7 @@ class AAO {
         $captcha = curl_exec($ch);
         curl_close($ch);
 
-        $this->img = &$captcha;
+        $this->img = &imagecreatefromstring($captcha);
     }
 
     /**
@@ -92,7 +86,7 @@ class AAO {
      * @param $pass    string
      * @param $captcha string
      */
-    private function login($id, $pass, $captcha) {
+    protected function login($id, $pass, $captcha) {
 
         //带着申请验证码得到的cookie，和自己填写的验证码，以及表单数据，去访问登陆页面
         //如果登陆不成功，则说明验证码的id有作用
@@ -118,7 +112,8 @@ class AAO {
         $header[] = 'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8';
         $header[] = 'Origin: http://202.118.31.197';
         $header[] = 'Upgrade-Insecure-Requests: 1';
-        $header[] = 'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.80 Safari/537.36';
+        $header[] =
+            'User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.80 Safari/537.36';
         $header[] = 'Content-Type: application/x-www-form-urlencoded;charset=gb2312';
 
         $ch = curl_init();
@@ -145,7 +140,7 @@ class AAO {
     /**
      * 获取账号数据
      */
-    private function getInfo() {
+    protected function getInfo() {
 
         //获取信息并显示
         $mainFrame = "http://202.118.31.197/ACTIONFINDSTUDENTINFO.APPPROCESS";
@@ -190,7 +185,7 @@ class AAO {
         $this->info = &$info;
     }
 
-    private function getPhoto($id) {
+    protected function getPhoto($id) {
 
         //获取图片
         $photoUrl  = "http://202.118.31.197/ACTIONDSPUSERPHOTO.APPPROCESS";
@@ -208,7 +203,7 @@ class AAO {
         fclose($fp);
     }
 
-    private function exist($id) {
+    protected function exist($id) {
 
         $isExist = "select * from info WHERE id='$id'";
         $res = mysqli_query($this->dbc, $isExist) or die('Exist Error: ' . mysqli_error($this->dbc));
@@ -216,7 +211,7 @@ class AAO {
         return mysqli_fetch_array($res) ? true : false;
     }
 
-    private function insert($id) {
+    protected function insert() {
 
         $info  = &$this->info;
         $query = "INSERT INTO info(id, name, gender, social_id,school,enter_year,major,how_long,class,grade,type)"
@@ -227,11 +222,16 @@ class AAO {
 
     public function run() {
 
+        $this->dbc = mysqli_connect('localhost:3306', 'nigel', 'nigel',
+                                    'neu') or die("Error connecting: " . mysqli_error($this->dbc));
+        //mysqli_query("set character set 'gbk'");//读库
+        //mysql_query("set names 'gbk'");//写库
+        mysqli_set_charset($this->dbc, 'gbk');
         //ignore_user_abort(); //即使Client断开(如关掉浏览器)，PHP脚本也可以继续执行.
         set_time_limit(0); // 执行时间为无限制，php默认的执行时间是30秒，通过set_time_limit(0)可以让程序无限制的执行下去
-        $interval = 1;
+        //$interval = 1;
         //140240-1402999
-        for ($id = 20144600; $id < 20144650; ++$id) {
+        for ($id = 2011000; $id < 2011999; ++$id) {
 
             $this->getCaptchaAndCookie();
 
@@ -241,20 +241,20 @@ class AAO {
                     if (!$this->exist($id)) {
                         $this->getPhoto($id);
                         $this->getInfo();
-                        $this->info && $this->insert($id);
+                        $this->info && $this->insert();
                         echo "success: " . $id . "\n";
-                    }else{
+                    } else {
                         echo "exist: " . $id . "\n";
                     }
-                }else{
+                } else {
                     echo "fail: " . $id . "\n";
                 }
             } else {
                 $id--;
             }
-            sleep($interval);
+            usleep(250000);
         }
     }
 }
 
-(new AAO())->run();
+//(new AAO())->run();

@@ -7,6 +7,8 @@
  * Time: 20:46
  */
 namespace Nigel\NEU;
+
+
 class Captcha {
 
     /**
@@ -102,21 +104,33 @@ class Captcha {
      */
     public $result;
 
+    /**
+     * Captcha constructor.
+     *
+     * @param $file resource 只接受使用imagecreatefromxxx创建的资源
+     */
     function __construct(&$file) {
 
-        //if (is_resource($file)) {
-        $this->img = imagecreatefromstring($file);
-        //} else {
-        //    $this->filename = $file;
-        //    $this->img      = imagecreatefromjpeg($this->filename);
-        //}
+        if (is_resource($file)) {
+            $this->img = &$file;
+        } else {
+            die("Captcha constructor:Please pass a img resourse");
+        }
+
         $this->toBinary();
+        //如果处于训练模式
+        if (defined('TRAINNING') && TRAINNING) {
+            imagejpeg($this->img, "trainningCaptcha-after.jpg");
+            imagedestroy($this->img);
+        }
         //imagejpeg($tmp->img, "step1.jpg");
         $this->filter();
-        //imagejpeg($tmp->img, "step2.jpg");
         $this->spilt();
-        $this->compare();
+        if (!defined('TRAINNING')) {
+            $this->compare();
+        }
     }
+
 
     /**
      * 二值化
@@ -126,8 +140,8 @@ class Captcha {
         //$this->size = getimagesize($this->filename);
         $this->size[0] = imagesx($this->img);
         $this->size[1] = imagesy($this->img);
-        //$white      = imagecolorallocate($this->img, 255, 255, 255);
-        //$black      = imagecolorallocate($this->img, 0, 0, 0);
+        $white         = imagecolorallocate($this->img, 255, 255, 255);
+        $black         = imagecolorallocate($this->img, 0, 0, 0);
 
         //一行一行地扫描
         for ($i = 0; $i < $this->size[0]; ++$i) {
@@ -142,15 +156,14 @@ class Captcha {
                 if ($rgbarray['red'] < 125 || $rgbarray['green'] < 125
                     || $rgbarray['blue'] < 125
                 ) {
-                    //imagesetpixel($this->img, $i, $j, $black);
                     $this->data[$i][$j] = 1;
+                    defined('TRAINNING') && TRAINNING && imagesetpixel($this->img, $i, $j, $black);
                 } else {
                     $this->data[$i][$j] = 0;
-                    //imagesetpixel($this->img, $i, $j, $white);
+                    defined('TRAINNING') && TRAINNING && imagesetpixel($this->img, $i, $j, $white);
                 }
             }
         }
-        imagedestroy($this->img);
     }
 
     /**
@@ -267,12 +280,6 @@ class Captcha {
         $this->result = $result;
     }
 
-    /**
-     * 获取字符库
-     */
-    function train() {
-
-    }
 
     /**
      * 测试正确率
