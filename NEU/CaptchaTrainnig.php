@@ -26,17 +26,19 @@ if (isset($_POST['1'])) {
 include "autoload.php";
 //训练模式
 define("TRAINNING", true);
-$ecard = new Nigel\NEU\Ecard();
-$ecard->train();
+//$ecard = new Nigel\NEU\Ecard();
+//$ecard->train();
 
-$img   = &imagecreatefromjpeg("trainningCaptcha.jpg");
+//$img   = &imagecreatefromjpeg("trainningCaptcha.jpg");
+$img   = &imagecreatefromjpeg("11.jpg");
 $ecard = new Nigel\NEU\Captcha_ecard($img);
 
 $data = join("!", $ecard->letters)
 ?>
 
 <h1>验证码</h1>
-<img src="trainningCaptcha.jpg" alt="获取的验证码">
+<!--<img src="trainningCaptcha.jpg" alt="获取的验证码">-->
+<img src="11.jpg" alt="获取的验证码">
 <h1>处理后</h1>
 <img src="trainningCaptcha-after.jpg" alt="处理之后的结果">
 <form action="<?php echo $_SERVER['PHP_SELF'] ?>" method="post">

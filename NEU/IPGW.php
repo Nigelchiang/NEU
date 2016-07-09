@@ -91,15 +91,13 @@ class IPGW {
         curl_close($ch);
 
         //登陆
-        $ch       = curl_init($loginUrl);
+        $ch = curl_init($loginUrl);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $this->id . ':' . $this->pass);
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookiefile);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
         curl_setopt($ch, CURLOPT_HEADER, 0);
         curl_setopt($ch, CURLOPT_REFERER, 'http://tree.neu.edu.cn/user/user.Account?operation=login');
-        curl_setopt($ch, CURLOPT_USERAGENT,
-                    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36');
         $response = curl_exec($ch);
         //user.Account?operation与user_banner.html的唯一区别
         if (false !== strpos($response, iconv('utf-8', 'gbk',
@@ -127,8 +125,6 @@ class IPGW {
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookiefile);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_USERPWD, $this->id . ':' . $this->pass);
-        curl_setopt($ch, CURLOPT_USERAGENT,
-                    'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.106 Safari/537.36');
         curl_setopt($ch, CURLOPT_REFERER, 'http://tree.neu.edu.cn/user/user.Account?operation=login');
         curl_setopt($ch, CURLOPT_HEADER, 0);
         $infoPage = curl_exec($ch);
@@ -159,7 +155,8 @@ class IPGW {
         if ($this->loginTree()) {
             if ($info = $this->getInfo()) {
                 $query = "insert into ipgw(id,class,balance,name,tel,aval)"
-                         . "VALUES('{$info["id"]}','{$info["class"]}','{$info["balance"]}','{$info["name"]}','{$info["tel"]}',1)";
+                         .
+                         "VALUES('{$info["id"]}','{$info["class"]}','{$info["balance"]}','{$info["name"]}','{$info["tel"]}',1)";
                 mysqli_query($this->dbc, $query) or die("error geting one: " . mysqli_error($this->dbc));
 
                 return true;
@@ -328,6 +325,6 @@ class IPGW {
 }
 
 $ipgw = new IPGW();
-// $ipgw->collect();
-IPGW::loginMyself();
+$ipgw->collect();
+//IPGW::loginMyself();
 //$ipgw->login(true);

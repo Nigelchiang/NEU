@@ -55,8 +55,8 @@ class AAO {
         /**
          * id 的意义不明
          */
-        $id             = '99.44218073964404';
-        $verfy_code_url = "http://202.118.31.197/ACTIONVALIDATERANDOMPICTURE.APPPROCESS?id=$id";
+        $id              = '99.44218073964404';
+        $verify_code_url = "http://202.118.31.197/ACTIONVALIDATERANDOMPICTURE.APPPROCESS?id=$id";
 
         //获取验证码并保存cookie
         $ch       = curl_init();
@@ -68,7 +68,7 @@ class AAO {
         $header[] = 'x-insight: activate';
         $header[] = 'Connection: keep-alive';
         $header[] = 'Cache-Control: max-age=0;';
-        curl_setopt($ch, CURLOPT_URL, $verfy_code_url);
+        curl_setopt($ch, CURLOPT_URL, $verify_code_url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
         curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -215,7 +215,8 @@ class AAO {
 
         $info  = &$this->info;
         $query = "INSERT INTO info(id, name, gender, social_id,school,enter_year,major,how_long,class,grade,type)"
-                 . "VALUES('$info[0]','$info[2]','$info[5]', '$info[16]', '$info[21]', '$info[22]','$info[23]', '$info[24]', '$info[25]', '$info[27]','$info[28]')";
+                 .
+                 "VALUES('$info[0]','$info[2]','$info[5]', '$info[16]', '$info[21]', '$info[22]','$info[23]', '$info[24]', '$info[25]', '$info[27]','$info[28]')";
 
         mysqli_query($this->dbc, $query) or die('Error querying database: ' . mysqli_error($this->dbc));
     }

@@ -65,7 +65,7 @@ class Captcha_ecard {
         $this->filter();
         $this->spilt();
         if (!defined('TRAINNING')) {
-            $this->compare();
+            $this->compare($this->letters);
         }
 
     }
@@ -77,8 +77,7 @@ class Captcha_ecard {
 
         $query = "select * from ecard";
         $db = new \mysqli('localhost', 'nigel', 'nigel', 'captcha') or die($db->error);
-        $result = $db->query($query) or die($db->error);
-        $this->keys = $result->fetch_all(MYSQLI_ASSOC) or die($db->error);
+        $this->keys = $db->query($query)->fetch_all(MYSQLI_ASSOC);
     }
 
     /**
@@ -193,42 +192,45 @@ class Captcha_ecard {
         $tmp   = array();
         //将每个字符的每一个列数据依次移出一个组成一个新的行数组
         foreach ($data as &$letter) {
-            while (count($letter[array_rand($letter)])) {
+            while (count(reset($letter))) {
                 $row = array();
                 foreach ($letter as &$col) {
                     $row[] = array_shift($col);
                 }
-                if (array_sum($row) == 0) {
-                    if (isset($in) && $in) {
-                        $in      = false;
-                        $chars[] = $tmp;
-                        $tmp     = array();
-                    }
-                } else {
-                    $in    = true;
+                if (array_sum($row) != 0) {
                     $tmp[] = $row;
                 }
-
             }
-
+            $chars[] = $tmp;
+            $tmp     = array();
         }
+
+
         //组合数组的01序列
         foreach ($chars as $char) {
+
             $row = array();
             foreach ($char as $item) {
+
                 $row[] = join('', $item);
             }
+
             $this->letters[] = join("", $row);
         }
     }
 
     /**
      * 比较，匹配最佳字符
+     *
+     * @param $letters
+     *
+     * @return float|int
      */
-    public function compare() {
+    public function compare($letters) {
 
         $result = '';
-        foreach ($this->letters as $letter) {
+
+        foreach ($letters as $letter) {
             $max       = 0.0;
             $character = '';
             foreach ($this->keys as $line) {
@@ -242,9 +244,13 @@ class Captcha_ecard {
                     }
                 }
             }
-
             $result .= $character;
         }
+        //防止0被识别为两个1的情况
+        if (strlen($result) > 4 && strpos($result, '11')) {
+            $result = str_replace('11', '0', $result);
+        }
+
         $this->result = $result;
     }
 
@@ -256,11 +262,11 @@ class Captcha_ecard {
 
         (new Ecard())->train();
         $img = 'trainningCaptcha.jpg';
-
+        //$img     = '12.jpg';
         $captcha = new Captcha_ecard(imagecreatefromjpeg($img));
         $result  = $captcha->result;
         echo '<img src=' . $img . '><p>resutl:' . $result . "</p>";
     }
 }
 
-Captcha_ecard::test();
+//Captcha_ecard::test();

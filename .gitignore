@@ -10,7 +10,8 @@ gen
 /img
 *.bmp
 *.jpg
-captcha/training/
+captcha/training-aao
+captcha/training-ecard
 *.jpeg
 captcha/learn/font/
 *.aspx

@@ -14,7 +14,7 @@
  * @link      http://overtrue.me
  */
 namespace Nigel\Utils;
-
+use Overtrue\Wechat\Utils\JSON;
 /**
  * Http请求类.
  *
@@ -268,8 +268,8 @@ class Http {
 
     /**
      * Perform the Curl request.
-     *
      * @return array
+     * @throws \Exception
      */
     protected function doCurl() {
 
